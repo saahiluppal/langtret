@@ -137,17 +137,6 @@ def get_boxes(boxes, labels, thresh):
 				# don't break, many labels may trigger for one box
 	return v_boxes, v_labels, v_scores
 
-def draw_boxes(image, v_boxes, v_labels, v_scores):
-	# load the image
-	for i in range(len(v_boxes)):
-		box = v_boxes[i]
-		# get coordinates
-		y1, x1, y2, x2 = box.ymin, box.xmin, box.ymax, box.xmax
-		# calculate width and height of the box
-		width, height = x2 - x1, y2 - y1
-		cv2.rectangle(image, (x1, y1), (x1+width, y1+height), color=(0,0,255), thickness=2)
-		# draw the box
-
 model = load_model('model.h5')
 input_h, input_w = 416, 416
 anchors = [[116,90, 156,198, 373,326], [30,61, 62,45, 59,119], [10,13, 16,30, 33,23]]
