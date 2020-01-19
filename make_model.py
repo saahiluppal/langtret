@@ -1,13 +1,7 @@
 import struct
 import numpy as np
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import Input
-from tensorflow.keras.layers import BatchNormalization
-from tensorflow.keras.layers import LeakyReLU
-from tensorflow.keras.layers import ZeroPadding2D
-from tensorflow.keras.layers import UpSampling2D
-from tensorflow.keras.layers import add
-from tensorflow.keras.layers import concatenate
+from tensorflow.keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ZeroPadding2D
+from tensorflow.keras.layers import UpSampling2D, add, concatenate
 from tensorflow.keras.models import Model
  
 def _conv_block(inp, convs, skip=True):
