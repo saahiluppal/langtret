@@ -2,6 +2,7 @@ import numpy as np
 from tensorflow.keras.models import load_model
 import cv2
 from moviepy.editor import VideoFileClip
+import argparse
 
 class BoundBox:
     def __init__(self, xmin, ymin, xmax, ymax, objness = None, classes = None):
@@ -181,41 +182,88 @@ def draw_boxes(image, boxes, labels, obj_thresh):
         
     return image
 
-net_h, net_w = 416, 416
-obj_thresh, nms_thresh = 0.5, 0.45
-anchors = [[116,90,  156,198,  373,326],  [30,61, 62,45,  59,119], [10,13,  16,30,  33,23]]
-labels = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", \
-            "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", \
-            "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", \
-            "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", \
-            "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", \
-            "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", \
-            "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", \
-            "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", \
-            "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", \
-            "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
+def main(infile, outfile, sub):
+    net_h, net_w = 416, 416
+    obj_thresh, nms_thresh = 0.5, 0.45
+    anchors = [[116,90,  156,198,  373,326],  [30,61, 62,45,  59,119], [10,13,  16,30,  33,23]]
+    labels = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "train", "truck", \
+                "boat", "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", \
+                "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", \
+                "backpack", "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", \
+                "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", \
+                "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", \
+                "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", \
+                "chair", "sofa", "pottedplant", "bed", "diningtable", "toilet", "tvmonitor", "laptop", "mouse", \
+                "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", \
+                "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush"]
 
-model = load_model('model.h5')
+    model = load_model('model.h5')
 
-def detect(image):
-    image_h, image_w, _ = image.shape
-    new_image = preprocess_input(image, net_h, net_w)
+    def detect(image):
+        image_h, image_w, _ = image.shape
+        new_image = preprocess_input(image, net_h, net_w)
 
-    yolos = model.predict(new_image)
-    boxes = []
+        yolos = model.predict(new_image)
+        boxes = []
 
-    for i in range(len(yolos)):
-        boxes += decode_netout(yolos[i][0], anchors[i], obj_thresh, nms_thresh, net_h, net_w)
+        for i in range(len(yolos)):
+            boxes += decode_netout(yolos[i][0], anchors[i], obj_thresh, nms_thresh, net_h, net_w)
 
-    correct_yolo_boxes(boxes, image_h, image_w, net_h, net_w)
+        correct_yolo_boxes(boxes, image_h, image_w, net_h, net_w)
 
-    do_nms(boxes, nms_thresh)
+        do_nms(boxes, nms_thresh)
 
-    draw_boxes(image, boxes, labels, obj_thresh)
+        draw_boxes(image, boxes, labels, obj_thresh)
 
-    return image
+        return image
 
-white_output = 'video_out.mp4'
-clip = VideoFileClip('video.mp4').subclip(10,15)
-white_clip  = clip.fl_image(detect)
-white_clip.write_videofile(white_output, audio=False)
+    white_output = outfile
+    if sub:
+        clip = VideoFileClip(infile).subclip(int(sub[0]), int(sub[1]))
+    else:
+        clip = VideoFileClip(infile)
+    white_clip  = clip.fl_image(detect)
+    white_clip.write_videofile(white_output, audio=False)
+
+argparser = argparse.ArgumentParser(
+    description='Object Detection in presaved videos'
+)
+
+argparser.add_argument(
+    '-f',
+    '--file',
+    help='video path',
+)
+
+argparser.add_argument(
+    '-o',
+    '--out',
+    help='Out video path',
+)
+
+argparser.add_argument(
+    '-s',
+    '--subclip',
+    nargs=2,
+    help='subclip of video [from] [upto]',
+)
+
+if __name__=='__main__':
+    args = argparser.parse_args()
+    if args.file:
+        if args.out:
+            if args.subclip:
+                print('Infile->', args.file, ' Outfile->', args.out, ' Subclip->',args.subclip)
+                main(args.file, args.out, args.subclip)
+            else:
+                print('Infile->', args.file, ' Outfile->', args.out)
+                main(args.file, args.out, None)
+        else:
+            if args.subclip:
+                print('Infile->', args.file, ' Outfile->', args.file[:-4] + '_out.mp4', ' Subclip->', args.subclip)
+                main(args.file, args.file[:-4] + '_out.mp4', args.subclip)
+            else:
+                print('Infile->', args.file, ' Outfile->', args.file[:-4] + '_out.mp4')
+                main(args.file, args.file[:-4] + '_out.mp4', None)
+    else:
+        print('No file path specified. -h or --help for help')
