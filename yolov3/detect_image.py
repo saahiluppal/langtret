@@ -228,5 +228,4 @@ if __name__=='__main__':
 	if args.image:
 		main(args.image)
 	else:
-		print('No image path specified. Defaults for testing')
-		main('car.jpeg')
+		print('No image path specified. hit -h or --help')
