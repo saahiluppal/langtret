@@ -1,4 +1,4 @@
-	# load yolov3 model and perform object detection
+# load yolov3 model and perform object detection
 # based on https://github.com/experiencor/keras-yolo3
 import numpy as np
 from numpy import expand_dims
@@ -173,7 +173,7 @@ model = load_model('model.h5')
 # define the expected input shape for the model
 input_w, input_h = 416, 416
 # define our new photo
-photo_filename = 'person.jpg'
+photo_filename = 'city.jpeg'
 # load and prepare image
 image, image_w, image_h = load_image_pixels(photo_filename, (input_w, input_h))
 # make prediction
