@@ -1,5 +1,3 @@
-# load yolov3 model and perform object detection
-# based on https://github.com/experiencor/keras-yolo3
 import numpy as np
 from numpy import expand_dims
 from tensorflow.keras.models import load_model
