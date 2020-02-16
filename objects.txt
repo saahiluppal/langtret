@@ -1,5 +1,0 @@
-Ambulance
-Bus
-Car
-Truck
-Van
