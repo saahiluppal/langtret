@@ -7,7 +7,6 @@ data_folder = '/home/anonymous/yolo_deps'
 num_categories = 5
 categories = ['Ambulance', 'Bus', 'Car', 'Truck', 'Van']
 
-"""
 clone_darknet = subprocess.Popen('git clone https://github.com/pjreddie/darknet'.split(), stdout=subprocess.PIPE)
 output, error = clone_darknet.communicate()
 
@@ -51,7 +50,28 @@ for index in range(len(yolo)):
 with open('cfg/yolov3_custom.cfg', 'w') as handle:
     handle.write(''.join(yolo))
 
-with open('data/obj.data', 'w') as handle:
+with open('data/obj.names', 'w') as handle:
     for cat in categories:
         handle.write(cat + '\n') 
-"""
+
+os.mkdir('backup/')
+
+with open('data/obj.data', 'w') as handle:
+    handle.write('classes = ' + str(num_categories) + '\n')
+    handle.write('train = data/train.txt\n')
+    handle.write('valid = data/test.txt\n')
+    handle.write('names = data/obj.names\n')
+    handle.write('backup = backup/')
+
+generate_train = subprocess.Popen('python generate_train.py'.split(), stdout = subprocess.PIPE)
+output, error = generate_train.communicate()
+
+conv_download = subprocess.Popen('wget https://pjreddie.com/media/files/darknet53.conv.74')
+output, erro r= conv_download.communicate()
+
+last_weights = 'darknet53.conv.74'
+
+train_string = './darknet detector train data/obj.data cfg/yolov3_custom.cfg ' + last_weights
+
+train = subprocess.Popen(train_string.split(), stdout = subprocess.PIPE)
+output, error = train.communicate()
