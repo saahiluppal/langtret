@@ -154,7 +154,7 @@ class WeightReader:
 
 model = make_yolov3_model()
 
-weight_reader = WeightReader('yolov3.weights')
+weight_reader = WeightReader('yolov3.backup')
 
 weight_reader.load_weights(model)
 
