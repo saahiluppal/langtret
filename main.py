@@ -3,9 +3,10 @@ import os
 import shutil
 
 enable_gpu = False
-data_folder = '/home/anonymous/yolo_deps'
+data_folder = '/home/anonymous/OIDv4_ToolKit/OID/Dataset/train/Car_Truck'
 num_categories = 5
 categories = ['Ambulance', 'Bus', 'Car', 'Truck', 'Van']
+last_weights = 'darknet53.conv.74'
 
 clone_darknet = subprocess.Popen('git clone https://github.com/pjreddie/darknet'.split(), stdout=subprocess.PIPE)
 output, error = clone_darknet.communicate()
@@ -23,13 +24,17 @@ def fn_gpu():
 
 if enable_gpu: fn_gpu()
 
+print('#### Changing Directory to ./darknet')
 os.chdir('darknet')
 
+print('#### Makefile Running')
 make = subprocess.Popen(['make'], stdout=subprocess.PIPE)
 output, error = make.communicate()
 
+print('#### Copying Data')
 shutil.copytree(data_folder, 'data/obj')
 
+print('#### Configuring YOLO cfg file')
 with open('cfg/yolov3.cfg') as handle:
     yolo = handle.readlines()
 
@@ -50,28 +55,38 @@ for index in range(len(yolo)):
 with open('cfg/yolov3_custom.cfg', 'w') as handle:
     handle.write(''.join(yolo))
 
+print('#### Configuring Names file')
 with open('data/obj.names', 'w') as handle:
     for cat in categories:
         handle.write(cat + '\n') 
 
-os.mkdir('backup/')
+print('#### Making backup directory')
+try:
+    os.mkdir('backup/')
+except:
+    print('backup directory already exists. Skipping...')
 
-with open('data/obj.data', 'w') as handle:
+print('#### Making data file')
+with open('data/obj.data', 'w+') as handle:
     handle.write('classes = ' + str(num_categories) + '\n')
     handle.write('train = data/train.txt\n')
     handle.write('valid = data/test.txt\n')
     handle.write('names = data/obj.names\n')
     handle.write('backup = backup/')
 
+print('#### Generating train.txt file')
+copy_file = subprocess.Popen('cp ../generate_train.py generate_train.py'.split(), stdout = subprocess.PIPE)
+output, error = copy_file.communicate()
+
 generate_train = subprocess.Popen('python generate_train.py'.split(), stdout = subprocess.PIPE)
 output, error = generate_train.communicate()
 
-conv_download = subprocess.Popen('wget https://pjreddie.com/media/files/darknet53.conv.74')
-output, erro r= conv_download.communicate()
-
-last_weights = 'darknet53.conv.74'
+print('#### Downloading pre-trained conv weights')
+conv_download = subprocess.Popen('wget https://pjreddie.com/media/files/darknet53.conv.74'.split(), stdout=subprocess.PIPE)
+output, error= conv_download.communicate()
 
 train_string = './darknet detector train data/obj.data cfg/yolov3_custom.cfg ' + last_weights
 
+print('#### Initializing Training')
 train = subprocess.Popen(train_string.split(), stdout = subprocess.PIPE)
 output, error = train.communicate()
