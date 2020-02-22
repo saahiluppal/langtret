@@ -158,18 +158,18 @@ def draw_boxes(filename, v_boxes, v_labels, v_scores):
 		# calculate width and height of the box
 		width, height = x2 - x1, y2 - y1
 		# create the shape
-		rect = Rectangle((x1, y1), width, height, fill=False, color='green')
+		rect = Rectangle((x1, y1), width, height, fill=False, color='red')
 		# draw the box
 		ax.add_patch(rect)
 		# draw text and score in top left corner
 		label = "%s (%.3f)" % (v_labels[i], v_scores[i])
-		pyplot.text(x1, y1, label, color='green')
+		pyplot.text(x1, y1, label, color='red')
 	# show the plot
 	pyplot.show()
 
 
 def main(filename):
-	model = load_model('model.h5')
+	model = load_model('vehicle.h5')
 	input_w, input_h = 416, 416
 
 	photo_filename = filename
@@ -191,7 +191,7 @@ def main(filename):
 
 	do_nms(boxes, 0.5)
 
-	labels = ["Ambulance", "Bus","Car","Truck","Van"]
+	labels = ["Ambulance", "Bus", "Car", "Truck", "Van"]
 
 	v_boxes, v_labels, v_scores = get_boxes(boxes, labels, class_threshold)
 	# summarize what we found
