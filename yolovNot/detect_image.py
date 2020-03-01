@@ -169,8 +169,8 @@ def draw_boxes(filename, v_boxes, v_labels, v_scores):
 
 
 def main(filename):
-	model = load_model('vehicle.h5')
-	input_w, input_h = 416, 416
+	model = load_model('model.h5')
+	input_w, input_h = 608, 608
 
 	photo_filename = filename
 
