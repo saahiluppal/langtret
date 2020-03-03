@@ -1,0 +1,13 @@
+{
+    "GPU":0,
+
+    "classes": [
+        "Vehicle_registration_plate"
+    ],
+
+    "data": "/home/anonymous/OIDv4_ToolKit/OID/Dataset/train/Vehicle_registration_plate",
+
+    "weights": "/home/anonymous/object_detection/yolov3_custom_final.weights",
+
+    "backup": "/home/anonymous/object_detection/darknet/backup"
+}
