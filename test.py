@@ -1,10 +1,12 @@
-with open("detect.cfg") as file:
-    vals = file.readlines()
+import json
 
-remove_linebreaks = lambda x: x.replace('\n','').strip()
-remove_empty = lambda x: len(x) > 0
+with open("detect.json") as handle:
+    config = handle.read()
 
-config = list(filter(remove_empty, map(remove_linebreaks, vals)))
+config = json.loads(config)
 
-for con in config:
-    print(con)
+enable_gpu = config['GPU'] == 1
+print(enable_gpu)
+classes = config['classes']
+
+data_folder = config['data']
