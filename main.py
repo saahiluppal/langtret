@@ -1,12 +1,19 @@
 import subprocess
 import os
 import shutil
+import json
 
-enable_gpu = False
-data_folder = '/home/anonymous/OIDv4_ToolKit/OID/Dataset/train/Car_Truck'
-num_categories = 5
-categories = ['Ambulance', 'Bus', 'Car', 'Truck', 'Van']
-last_weights = 'darknet53.conv.74'
+with open('detect.json') as handle:
+    config = handle.read()
+
+config = json.loads(config)
+
+enable_gpu = config['GPU'] == 1
+data_folder = config['data']
+categories = config['classes']
+num_categories = len(categories)
+last_weights = config['weights']
+backup_dir = config['backup']
 
 clone_darknet = subprocess.Popen('git clone https://github.com/pjreddie/darknet'.split(), stdout=subprocess.PIPE)
 output, error = clone_darknet.communicate()
@@ -44,7 +51,7 @@ for index in range(len(yolo)):
     elif index == 5 or index == 6:
         yolo[index] = yolo[index].replace('#', '')
     elif index == 19:
-        yolo[index] = 'max_batches = ' + str(2000 * num_categories) + '\n'
+        yolo[index] = 'max_batches = ' + str(max( 4000, 2000 * num_categories)) + '\n'
     elif index == 21:
         yolo[index] = 'steps=' + str(int(0.8 * (2000 * num_categories))) + ',' + str(int(0.9 * (2000 * num_categories))) + '\n'
     elif index == 782 or index == 695 or index == 609:
@@ -62,7 +69,7 @@ with open('data/obj.names', 'w') as handle:
 
 print('#### Making backup directory')
 try:
-    os.mkdir('backup/')
+    os.mkdir(backup_dir)
 except:
     print('backup directory already exists. Skipping...')
 
@@ -81,9 +88,12 @@ output, error = copy_file.communicate()
 generate_train = subprocess.Popen('python generate_train.py'.split(), stdout = subprocess.PIPE)
 output, error = generate_train.communicate()
 
-print('#### Downloading pre-trained conv weights')
-conv_download = subprocess.Popen('wget https://pjreddie.com/media/files/darknet53.conv.74'.split(), stdout=subprocess.PIPE)
-output, error= conv_download.communicate()
+if last_weights.endswith("darknet53.conv.74"):
+    print('#### Downloading pre-trained conv weights')
+    conv_download = subprocess.Popen('wget https://pjreddie.com/media/files/darknet53.conv.74'.split(), stdout=subprocess.PIPE)
+    output, error= conv_download.communicate()
+else:
+    last_weights = last_weights
 
 train_string = './darknet detector train data/obj.data cfg/yolov3_custom.cfg ' + last_weights
 
