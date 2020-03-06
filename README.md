@@ -30,3 +30,44 @@ For Example, we want to download the dataset of road vehicles, then our command 
  Truck
  Bus
  ```
+And lastly initiate the script convert_annotations.py from the cloned_repo and remove <strong>Label</strong> folder from cloned_repo/OID/Dataset/train/.
+```bash
+$ python convert_annotations.py
+```
+
+#### NOTE:: If you find Downloading Dataset a difficult process. Here's a <a href='https://www.youtube.com/watch?v=_4A9inxGqRM'>video</a> explaining about it and will let you get started quickly.
+
+## Train Your Model:
+Training Model is a relatively easy task then downloading dataset (at least i feel so ; ). Just configure detect.json file.
+```bash
+{
+    "GPU":1,
+
+    "classes": [
+        "Car",
+        "Bus",
+        "Van",
+        "Truck",
+    ],
+
+    "data": "/home/anonymous/OIDv4_Toolkit/OID/Dataset/train/Car_Bus_Van_Truck",
+
+    "weights": "darknet53.conv.74",
+
+    "backup": "/home/anonymous/backup/"
+}
+```
+Set GPU=1 to enable GPU and GPU=0 to disable GPU. Enabling GPU is highly reccomended because if you don't enable GPU, model will take months to train if not weeks.
+
+Type all the classes you just downloaded from previous section in the classes part.
+
+Provide the data directory where the data is stored in the similar fashion as stated.
+
+Provide pre-trained weights (if any). This will help you to restart training if interrupted. If you don't have any pre-trained weights, then rest it to default i.e. "darknet53.conv.74" which is a sweet point to initialize training.
+
+Provide backup directory because training model is saved every 100th epoch while training. So you can have your model saved if interrputed for some reason. you can resume your training by providing last saved model to weights in detect.json.
+
+Initiate Training:
+```bash
+$ python main.py
+```
