@@ -47,6 +47,9 @@ make = subprocess.Popen(['make'], stdout=subprocess.PIPE)
 output, error = make.communicate()
 
 print('#### Copying Data')
+mkdir = subprocess.Popen('mkdir -pv data/obj/', stdout=subprocess.PIPE)
+output, error = mkdir.communicate()
+
 copy_string = 'cp -r ' + data_folder + '/ data/obj/'
 copy = subprocess.Popen(copy_string.split(), stdout=subprocess.PIPE)
 output, error = copy.communicate()
