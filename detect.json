@@ -1,5 +1,5 @@
 {
-    "GPU":0,
+    "GPU":1,
 
     "classes": [
         "Vehicle_registration_plate"
@@ -7,7 +7,7 @@
 
     "data": "/home/anonymous/Vehicle_registration_plate",
 
-    "weights": "darknet53.conv.74",
+    "weights": "/home/anonymous/models/darknet53.conv.74",
 
     "backup": "/home/anonymous/models/"
 }
