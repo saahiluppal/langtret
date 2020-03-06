@@ -5,9 +5,9 @@
         "Vehicle_registration_plate"
     ],
 
-    "data": "/home/anonymous/OIDv4_ToolKit/OID/Dataset/train/Vehicle_registration_plate",
+    "data": "/home/anonymous/Vehicle_registration_plate",
 
-    "weights": "/home/anonymous/object_detection/yolov3_custom_final.weights",
+    "weights": "/home/anonymous/models/darknet53.conv.74",
 
     "backup": "/home/anonymous/object_detection/darknet/backup"
 }
