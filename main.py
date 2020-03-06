@@ -33,6 +33,8 @@ def fn_gpu():
     makefile = makefile.replace("CUDNN=0","CUDNN=1")
     makefile = makefile.replace("OPENCV=0","OPENCV=1")
 
+    print('GPU Enabled')
+
     with open("darknet/Makefile", 'w') as handle:
         handle.write(makefile)
 
