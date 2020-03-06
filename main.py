@@ -15,6 +15,13 @@ num_categories = len(categories)
 last_weights = config['weights']
 backup_dir = config['backup']
 
+print('#### Creating Model Script')
+with open('modelrc.py') as handle:
+    model_script = handle.read()
+model_script = model_script.replace('yolo_filter = 255', 'yolo_filter = '+ str(int(num_categories + 5) * 3))
+with open('make_model.py', 'w') as handle:
+    handle.write(model_script)
+
 clone_darknet = subprocess.Popen('git clone https://github.com/pjreddie/darknet'.split(), stdout=subprocess.PIPE)
 output, error = clone_darknet.communicate()
 
