@@ -1,6 +1,5 @@
 import subprocess
 import os
-import shutil
 import json
 
 with open('detect.json') as handle:
@@ -48,7 +47,9 @@ make = subprocess.Popen(['make'], stdout=subprocess.PIPE)
 output, error = make.communicate()
 
 print('#### Copying Data')
-shutil.copytree(data_folder, 'data/obj')
+copy_string = 'cp -r ' + data_folder + '/ data/obj/'
+copy = subprocess.Popen(copy_string.split(), stdout=subprocess.PIPE)
+output, error = copy.communicate()
 
 batches = max(4000, 2000 * num_categories)
 
