@@ -7,7 +7,7 @@
 
     "data": "/home/anonymous/Vehicle_registration_plate",
 
-    "weights": "/home/anonymous/models/darknet53.conv.74",
+    "weights": "darknet53.conv.74",
 
-    "backup": "/home/anonymous/object_detection/darknet/backup"
+    "backup": "/home/anonymous/models/"
 }
