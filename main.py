@@ -41,6 +41,8 @@ output, error = make.communicate()
 print('#### Copying Data')
 shutil.copytree(data_folder, 'data/obj')
 
+batches = max(4000, 2000 * num_categories)
+
 print('#### Configuring YOLO cfg file')
 with open('cfg/yolov3.cfg') as handle:
     yolo = handle.readlines()
@@ -51,9 +53,9 @@ for index in range(len(yolo)):
     elif index == 5 or index == 6:
         yolo[index] = yolo[index].replace('#', '')
     elif index == 19:
-        yolo[index] = 'max_batches = ' + str(max( 4000, 2000 * num_categories)) + '\n'
+        yolo[index] = 'max_batches = ' + str(batches) + '\n'
     elif index == 21:
-        yolo[index] = 'steps=' + str(int(0.8 * (2000 * num_categories))) + ',' + str(int(0.9 * (2000 * num_categories))) + '\n'
+        yolo[index] = 'steps=' + str(int(0.8 * (batches))) + ',' + str(int(0.9 * (batches))) + '\n'
     elif index == 782 or index == 695 or index == 609:
         yolo[index] = 'classes=' + str(num_categories) + '\n'
     elif index == 602 or index == 688 or index == 775:
@@ -89,9 +91,10 @@ generate_train = subprocess.Popen('python generate_train.py'.split(), stdout = s
 output, error = generate_train.communicate()
 
 if last_weights.endswith("darknet53.conv.74"):
-    print('#### Downloading pre-trained conv weights')
-    conv_download = subprocess.Popen('wget https://pjreddie.com/media/files/darknet53.conv.74'.split(), stdout=subprocess.PIPE)
-    output, error= conv_download.communicate()
+    if not os.path.isfile(last_weights):
+        print('#### Downloading pre-trained conv weights')
+        conv_download = subprocess.Popen('wget https://pjreddie.com/media/files/darknet53.conv.74'.split(), stdout=subprocess.PIPE)
+        output, error= conv_download.communicate()
 else:
     last_weights = last_weights
 
