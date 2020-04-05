@@ -14,6 +14,7 @@ BATCH_SIZE = 64
 EMBEDDING_DIM = 256
 EPOCHS = 100
 PATIENCE = 5
+EXAMPLES = 40_000
 
 
 def preprocess(sentence, lower=False):
@@ -27,7 +28,7 @@ def preprocess(sentence, lower=False):
 
     return sentence
 
-def create_dataset(path, lower=False):
+def create_dataset(path, num_examples, lower=False):
     lines = io.open(path, encoding='utf-8').read().strip().split('\n')
     language1 = []
     language2 = []
@@ -39,7 +40,7 @@ def create_dataset(path, lower=False):
         language1.append(lang1)
         language2.append(lang2)
 
-    return language1, language2
+    return language1[:num_examples], language2[:num_examples]
 
 def create_tokenizer(lang1, lang2):
     english = tfds.features.text.SubwordTextEncoder.build_from_corpus(
@@ -59,7 +60,7 @@ def append_tokens(lang1, lang2, tok1, tok2):
   return lang1, lang2
 
 def load_dataset(path, max_length):
-  lang1, lang2 = create_dataset(path, lower=True)
+  lang1, lang2 = create_dataset(path, num_examples=EXAMPLES, lower=True)
   tok1, tok2 = create_tokenizer(lang1, lang2)
   language1, language2 = [], []
   for val1, val2 in tqdm(zip(lang1, lang2)):
@@ -86,7 +87,7 @@ def loss_fn(real, pred, obj):
 
 
 
-lang1, lang2, tok1, tok2 = load_dataset(PATH, max_length = 5)
+lang1, lang2, tok1, tok2 = load_dataset(PATH, max_length = 40)
 dataset = tf.data.Dataset.from_tensor_slices((lang1, lang2))
 
 dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE, 
