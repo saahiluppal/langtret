@@ -2,6 +2,7 @@ from enc_dec_utils import Encoder, Decoder
 import tensorflow_datasets as tfds
 import tensorflow as tf
 from tqdm import tqdm
+import numpy as np
 import time
 import io
 import re
@@ -12,6 +13,7 @@ BUFFER_SIZE = 420_000
 BATCH_SIZE = 64
 EMBEDDING_DIM = 256
 EPOCHS = 100
+PATIENCE = 5
 
 
 def preprocess(sentence, lower=False):
@@ -84,7 +86,7 @@ def loss_fn(real, pred, obj):
 
 
 
-lang1, lang2, tok1, tok2 = load_dataset(PATH, max_length = 50)
+lang1, lang2, tok1, tok2 = load_dataset(PATH, max_length = 5)
 dataset = tf.data.Dataset.from_tensor_slices((lang1, lang2))
 
 dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE, 
@@ -101,7 +103,7 @@ decoder = Decoder(vocab_tar_size, EMBEDDING_DIM,
 
 optimizer = tf.keras.optimizers.Adam(learning_rate = 1e-4)
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-    from_logits = True, reduction=None
+    from_logits = True, reduction='none'
 )
 
 checkpoint_dir = './checkpoints'
@@ -110,11 +112,10 @@ checkpoint = tf.train.Checkpoint(optimizer = optimizer,
                                 encoder = encoder,
                                 decoder = decoder)
 loss_history = []
+steps = len([val for val in dataset]) // BATCH_SIZE
 
 @tf.function
 def train_step(inp, targ, enc_hidden):
-    loss = 0
-
     with tf.GradientTape() as tape:
         enc_output, enc_hidden = encoder(inp, enc_hidden)
         dec_hidden = enc_hidden
@@ -123,31 +124,38 @@ def train_step(inp, targ, enc_hidden):
         for t in range(1, targ.shape[1]):
             predictions, dec_hidden, _ = decoder(dec_input, dec_hidden,
                                                 enc_output)
-            loss += loss_fn(targ[:, t], predictions, loss_object)
+            loss = loss_fn(targ[:, t], predictions, loss_object)
             dec_input = tf.expand_dims(targ[:, t], 1)
         
     variables = encoder.trainable_variables + decoder.trainable_variables
     gradients = tape.gradient(loss, variables)
     optimizer.apply_gradients(zip(gradients, variables))
 
-    return loss / int(targ.shape[1])
+    return loss / targ.shape[1]
 
 print('Training Start...')
 for epoch in range(EPOCHS):
     start = time.time()
 
     enc_hidden = encoder.initialize_hidden_state()
-    total_loss = 0
 
     print(f'Epoch: {epoch + 1} Started')
     for batch, (inp, targ) in enumerate(dataset):
-        batch_loss = train_step(inp, targ, enc_hidden)
-        total_loss += batch_loss
+        loss = train_step(inp, targ, enc_hidden)
         print(f"Batch: {batch}", end='\r')
-    print(f"\nTime {round(time.time() - start, 2)}\n")
+    print(f"\nTime: {round(time.time() - start, 2)} Loss: {loss}\n")
 
-    if (epoch + 1) % 5 == 0:
+    if (epoch + 1) % 10 == 0:
         print('Checkpoint Saved')
         checkpoint.save(file_prefix = checkpoint_prefix)
     
-    loss_history.append(total_loss)
+    loss_history.append(loss)
+    low = len(np.where(np.array(loss_history) < loss)[0])
+    if low >= PATIENCE:
+        print('Early Stopping...')
+        break
+
+print('Training End...')
+tok1.save_to_file('tok_lang1')
+tok2.save_to_file('tok_lang2')
+checkpoint.save(file_prefix = checkpoint_prefix)
