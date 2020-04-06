@@ -14,7 +14,7 @@ BATCH_SIZE = 64
 EMBEDDING_DIM = 256
 EPOCHS = 100
 PATIENCE = 5
-EXAMPLES = 40_000
+EXAMPLES = 30_000
 
 
 def preprocess(sentence, lower=False):
@@ -59,15 +59,14 @@ def append_tokens(lang1, lang2, tok1, tok2):
 
   return lang1, lang2
 
-def load_dataset(path, max_length):
-  lang1, lang2 = create_dataset(path, num_examples=EXAMPLES, lower=True)
+def load_dataset(path, num_examples):
+  lang1, lang2 = create_dataset(path, num_examples=num_examples, lower=True)
   tok1, tok2 = create_tokenizer(lang1, lang2)
   language1, language2 = [], []
   for val1, val2 in tqdm(zip(lang1, lang2)):
     val1, val2 = append_tokens(val1, val2, tok1, tok2)
-    if len(val1) <= max_length and len(val2) <= max_length:
-      language1.append(val1)
-      language2.append(val2)
+    language1.append(val1)
+    language2.append(val2)
   
   language1 = tf.keras.preprocessing.sequence.pad_sequences(language1, 
                                         padding='post')
@@ -83,11 +82,11 @@ def loss_fn(real, pred, obj):
     mask = tf.cast(mask, dtype=loss.dtype)
     loss *= mask
 
-    return tf.reduce_mean(loss)
+    return tf.reduce_mean(loss)/tf.reduce_sum(mask)
 
 
 
-lang1, lang2, tok1, tok2 = load_dataset(PATH, max_length = 40)
+lang1, lang2, tok1, tok2 = load_dataset(PATH, num_examples = EXAMPLES)
 dataset = tf.data.Dataset.from_tensor_slices((lang1, lang2))
 
 dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE, 
@@ -106,12 +105,14 @@ optimizer = tf.keras.optimizers.Adam(learning_rate = 1e-4)
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
     from_logits = True, reduction='none'
 )
+train_loss = tf.keras.metrics.Mean(name = 'train_loss')
 
-checkpoint_dir = './checkpoints'
-checkpoint_prefix = os.path.join(checkpoint_dir, 'ckpt')
-checkpoint = tf.train.Checkpoint(optimizer = optimizer,
-                                encoder = encoder,
-                                decoder = decoder)
+checkpoint_path = './checkpoints/train'
+ckpt = tf.train.Checkpoint(optimizer = optimizer,
+                            encoder = encoder,
+                            decoder = decoder)
+ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep = 5)
+
 loss_history = []
 steps = len([val for val in dataset]) // BATCH_SIZE
 
@@ -132,7 +133,7 @@ def train_step(inp, targ, enc_hidden):
     gradients = tape.gradient(loss, variables)
     optimizer.apply_gradients(zip(gradients, variables))
 
-    return loss / targ.shape[1]
+    train_loss(loss)
 
 print('Training Start...')
 for epoch in range(EPOCHS):
@@ -142,16 +143,16 @@ for epoch in range(EPOCHS):
 
     print(f'Epoch: {epoch + 1} Started')
     for batch, (inp, targ) in enumerate(dataset):
-        loss = train_step(inp, targ, enc_hidden)
-        print(f"Batch: {batch}", end='\r')
-    print(f"\nTime: {round(time.time() - start, 2)} Loss: {loss}\n")
+        train_step(inp, targ, enc_hidden)
+        print(f"Batch: {batch}, Loss: {train_loss.result()}", end='\r')
+    print(f"\nTime: {round(time.time() - start, 2)} Loss: {train_loss.result()}\n")
 
     if (epoch + 1) % 10 == 0:
         print('Checkpoint Saved')
-        checkpoint.save(file_prefix = checkpoint_prefix)
+        ckpt_save_path = ckpt_manager.save()
     
-    loss_history.append(loss)
-    low = len(np.where(np.array(loss_history) < loss)[0])
+    loss_history.append(train_loss.result())
+    low = len(np.where(np.array(loss_history) < train_loss.result())[0])
     if low >= PATIENCE:
         print('Early Stopping...')
         break
@@ -159,4 +160,4 @@ for epoch in range(EPOCHS):
 print('Training End...')
 tok1.save_to_file('tok_lang1')
 tok2.save_to_file('tok_lang2')
-checkpoint.save(file_prefix = checkpoint_prefix)
+ckpt_manager.save()
