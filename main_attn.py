@@ -122,6 +122,8 @@ steps = len([val for val in dataset]) // BATCH_SIZE
 
 @tf.function
 def train_step(inp, targ, enc_hidden):
+    loss = 0
+
     with tf.GradientTape() as tape:
         enc_output, enc_hidden = encoder(inp, enc_hidden)
         dec_hidden = enc_hidden
@@ -130,14 +132,14 @@ def train_step(inp, targ, enc_hidden):
         for t in range(1, targ.shape[1]):
             predictions, dec_hidden, _ = decoder(dec_input, dec_hidden,
                                                  enc_output)
-            loss = loss_function(targ[:, t], predictions, loss_object)
+            loss += loss_function(targ[:, t], predictions, loss_object)
             dec_input = tf.expand_dims(targ[:, t], 1)
 
     variables = encoder.trainable_variables + decoder.trainable_variables
     gradients = tape.gradient(loss, variables)
     optimizer.apply_gradients(zip(gradients, variables))
 
-    train_loss(loss)
+    train_loss(loss / targ.shape[1])
 
 
 print('Training Start...')
@@ -149,7 +151,7 @@ for epoch in range(EPOCHS):
     print(f'Epoch: {epoch + 1} Started')
     for batch, (inp, targ) in enumerate(dataset):
         train_step(inp, targ, enc_hidden)
-        print(f"Batch: {batch}, Loss: {train_loss.result()}", end='\r')
+        print(f"Batch: {batch}", end='\r')
     print(
         f"\nTime: {round(time.time() - start, 2)} Loss: {train_loss.result()}\n")
 
