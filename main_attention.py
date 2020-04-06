@@ -79,6 +79,7 @@ def load_dataset(path, num_examples):
 
     return language1, language2, tok1, tok2
 
+
 def loss_function(real, pred, obj):
     mask = tf.math.logical_not(tf.math.equal(real, 0))
     loss_ = loss_object(real, pred)
@@ -115,7 +116,7 @@ ckpt = tf.train.Checkpoint(encoder=encoder,
 ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=3)
 
 loss_history = []
-steps = len([val for val in dataset]) // BATCH_SIZE
+steps = EXAMPLES // BATCH_SIZE
 
 
 @tf.function
@@ -130,30 +131,31 @@ def train_step(inp, targ, enc_hidden):
         for t in range(1, targ.shape[1]):
             predictions, dec_hidden, _ = decoder(dec_input, dec_hidden,
                                                  enc_output)
+
             loss += loss_function(targ[:, t], predictions, loss_object)
             dec_input = tf.expand_dims(targ[:, t], 1)
 
-    total_loss = (loss / int(targ.shape[1]))
+    batch_loss = (loss / int(targ.shape[1]))
     variables = encoder.trainable_variables + decoder.trainable_variables
     gradients = tape.gradient(loss, variables)
     optimizer.apply_gradients(zip(gradients, variables))
+    return batch_loss
 
-    return loss, total_loss
 
 try:
     print('Training Start...')
     for epoch in range(EPOCHS):
         start = time.time()
         total_loss = 0
-
         enc_hidden = encoder.initialize_hidden_state()
 
         print(f'Epoch: {epoch + 1} Started')
+
         for batch, (inp, targ) in enumerate(dataset):
-            batch_loss, t_loss = train_step(inp, targ, enc_hidden)
-            total_loss += t_loss
+            batch_loss = train_step(inp, targ, enc_hidden)
+            total_loss += batch_loss
             print(f"Batch: {batch}", end='\r')
-        
+
         total_loss = total_loss / steps
         print(
             f"\nTime: {round(time.time() - start, 2)} Loss: {total_loss}\n")
