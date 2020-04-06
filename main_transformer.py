@@ -18,7 +18,7 @@ NUM_LAYERS = 6
 PATIENCE = 5
 DFF = 2048
 NUM_HEADS = 8
-EXAMPLES = 80_000
+EXAMPLES = 150_000
 EPOCHS = 100
 
 
@@ -168,30 +168,34 @@ def train_step(inp, tar):
     train_loss(loss)
     train_accuracy(tar_real, predictions)
 
+try:
+    print("Training Start...")
+    for epoch in range(EPOCHS):
+        start = time.time()
 
-print("Training Start...")
-for epoch in range(EPOCHS):
-    start = time.time()
+        train_loss.reset_states()
+        train_accuracy.reset_states()
 
-    train_loss.reset_states()
-    train_accuracy.reset_states()
+        print(f'Epoch {epoch + 1} Started...')
+        for batch, (inp, tar) in enumerate(dataset):
+            train_step(inp, tar)
+            print(f'Batch: {batch}', end='\r')
+        print(f'Time {time.time() - start}')
+        print(f'Epoch {epoch + 1}, Loss: {train_loss.result()}, Accuracy: {train_accuracy.result()}\n')
 
-    print(f'Epoch {epoch + 1} Started...')
-    for batch, (inp, tar) in enumerate(dataset):
-        train_step(inp, tar)
-        print(f'Batch: {batch}', end='\r')
-    print(f'Time {time.time() - start}')
-    print(f'Epoch {epoch + 1}, Loss: {train_loss.result()}, Accuracy: {train_accuracy.result()}\n')
+        if (epoch + 1) % 10 == 0:
+            ckpt_save_path = ckpt_manager.save()
+            print('Saving Checkpoint')
 
-    if (epoch + 1) % 10 == 0:
-        ckpt_save_path = ckpt_manager.save()
-        print('Saving Checkpoint')
-
-    loss_history.append(train_loss.result())
-    low = len(np.where(np.array(loss_history) < train_loss.result())[0])
-    if low >= PATIENCE:
-        print("Early Stopping...")
-        break
+        loss_history.append(train_loss.result())
+        low = len(np.where(np.array(loss_history) < train_loss.result())[0])
+        if low >= PATIENCE:
+            print("Early Stopping...")
+            break
+except KeyboardInterrupt:
+    tok1.save_to_file('tok_lang1')
+    tok2.save_to_file('tok_lang2')
+    ckpt_manager.save()
 
 print("Training End...")
 tok1.save_to_file('tok_lang1')
