@@ -145,6 +145,7 @@ if ckpt_manager.latest_checkpoint:
 
 loss_history = []
 
+
 @tf.function
 def train_step(inp, tar):
     tar_inp = tar[:, :-1]
@@ -167,6 +168,7 @@ def train_step(inp, tar):
     train_loss(loss)
     train_accuracy(tar_real, predictions)
 
+
 print("Training Start...")
 for epoch in range(EPOCHS):
     start = time.time()
@@ -178,13 +180,13 @@ for epoch in range(EPOCHS):
     for batch, (inp, tar) in enumerate(dataset):
         train_step(inp, tar)
         print(f'Batch: {batch}', end='\r')
-
-    print(f'Epoch {epoch + 1}, Loss: {train_loss.result()}, Accuracy: {train_accuracy.result()}')
+    print(f'Time {time.time() - start}')
+    print(f'Epoch {epoch + 1}, Loss: {train_loss.result()}, Accuracy: {train_accuracy.result()}\n')
 
     if (epoch + 1) % 10 == 0:
         ckpt_save_path = ckpt_manager.save()
         print('Saving Checkpoint')
-    
+
     loss_history.append(train_loss.result())
     low = len(np.where(np.array(loss_history) < train_loss.result())[0])
     if low >= PATIENCE:
