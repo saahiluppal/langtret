@@ -14,7 +14,7 @@ BATCH_SIZE = 64
 EMBEDDING_DIM = 256
 EPOCHS = 100
 PATIENCE = 5
-EXAMPLES = 30_000
+EXAMPLES = 100_000
 
 
 def preprocess(sentence, lower=False):
@@ -105,7 +105,7 @@ encoder = Encoder(vocab_inp_size, EMBEDDING_DIM,
 decoder = Decoder(vocab_tar_size, EMBEDDING_DIM,
                   units, BATCH_SIZE, batch_norm=True)
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
+optimizer = tf.keras.optimizers.Adam(1e-4)
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
     from_logits=True, reduction='none'
 )
@@ -156,7 +156,7 @@ try:
             total_loss += batch_loss
             print(f"Batch: {batch}", end='\r')
 
-        total_loss = total_loss / steps
+        total_loss = (total_loss / steps) / steps
         print(
             f"\nTime: {round(time.time() - start, 2)} Loss: {total_loss}\n")
 
