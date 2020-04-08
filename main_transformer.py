@@ -135,8 +135,7 @@ transformer = Transformer(NUM_LAYERS, EMBEDDING_DIM, NUM_HEADS, DFF,
                           rate=dropout_rate)
 
 checkpoint_path = "./checkpoints/train"
-ckpt = tf.train.Checkpoint(transformer=transformer,
-                           optimizer=optimizer)
+ckpt = tf.train.Checkpoint(transformer=transformer)
 ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
 
 if ckpt_manager.latest_checkpoint:
