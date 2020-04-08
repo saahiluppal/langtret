@@ -2,7 +2,6 @@ import tensorflow as tf
 from transformer_utils import Transformer
 import tensorflow_datasets as tfds
 from keras_utils import create_look_ahead_mask, create_padding_mask
-from keras_utils import CustomSchedule
 
 EMBEDDING_DIM = 512
 NUM_LAYERS = 6
@@ -26,13 +25,8 @@ transformer = Transformer(NUM_LAYERS, EMBEDDING_DIM, NUM_HEADS, DFF,
                           pe_target=target_vocab_size,
                           rate=dropout_rate)
 
-learning_rate = CustomSchedule(EMBEDDING_DIM)
-optimizer = tf.keras.optimizers.Adam(learning_rate,
-                                     beta_1=0.9, beta_2=0.98, epsilon=1e-9)
-
 checkpoint_path = './checkpoints'
-ckpt = tf.train.Checkpoint(optimizer = optimizer,
-                            transformer = transformer)
+ckpt = tf.train.Checkpoint(transformer = transformer)
 ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep = 5)
 if ckpt_manager.latest_checkpoint:
     ckpt.restore(ckpt_manager.latest_checkpoint)
