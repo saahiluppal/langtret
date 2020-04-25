@@ -2,8 +2,8 @@
 This Repository provides implementation for <strong>Language Translation System</strong> 
 in Tensorflow 2 using all best practices
  ### Implementations Included:
- - Encoder Decoder with Attention
  - Transformers
+ - Encoder Decoder with Attention
  
  ## Training And Evaluating Transformers
  Dataset is needed in order to train Transformer model. Go grab a dataset of your choice from the pool <a href='http://www.manythings.org/anki/'>here</a>. Extract the dataset and you are ready to train the model.
