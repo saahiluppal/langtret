@@ -100,10 +100,12 @@ def create_masks(inp, tar):
 
     return enc_padding_mask, combined_mask, dec_padding_mask
 
-
+CRITERION = tf.keras.losses.SparseCategoricalCrossentropy(
+    from_logits = True, reduction = 'none'
+)
 def loss_function(real, pred, obj):
     mask = tf.math.logical_not(tf.math.equal(real, 0))
-    loss_ = obj(real, pred)
+    loss_ = CRITERION(real, pred)
 
     mask = tf.cast(mask, dtype=loss_.dtype)
     loss_ *= mask
@@ -125,9 +127,6 @@ def main(absl):
     optimizer = tf.keras.optimizers.Adam(learning_rate,
                                         beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
-    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-        from_logits=True, reduction='none'
-    )
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
         name='train_accuracy')
@@ -163,7 +162,7 @@ def main(absl):
                                         enc_padding_mask,
                                         combined_mask,
                                         dec_padding_mask)
-            loss = loss_function(tar_real, predictions, loss_object)
+            loss = loss_function(tar_real, predictions)
 
         gradients = tape.gradient(loss, transformer.trainable_variables)
         optimizer.apply_gradients(zip(gradients, transformer.trainable_variables))
