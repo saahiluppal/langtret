@@ -39,3 +39,10 @@ $ python main_attention.py --path [path to .txt] \
  This will split out the model weights and tokenizers for both the languages.
  Model weights can be found in **checkpoints** directory and tokenizers can be found
  named **tok_lang1.subwords** and **tok_lang2.subwords**
+ #### Inference:
+```bash
+$ python evaluate_attention.py --input_vocab [path to input vocabulary (in this case tok_lang1.subwords)] \
+                                --target_vocab [path to target vocabulary] \
+                                --checkpoint [path to checkpoint directory (defaults to ./checkpoints/train)]
+```
+_evaluate_attention.py_ script is highly customizable, so you can customize it in your own way. Default configuration will ask you for input and will spit out the prediction.
