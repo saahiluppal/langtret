@@ -46,3 +46,6 @@ $ python evaluate_attention.py --input_vocab [path to input vocabulary (in this 
                                 --checkpoint [path to checkpoint directory (defaults to ./checkpoints/train)]
 ```
 _evaluate_attention.py_ script is highly customizable, so you can customize it in your own way. Default configuration will ask you for input and will spit out the prediction.
+
+## LICENSE
+<a href='https://github.com/saahiluppal/langtret/blob/master/LICENSE'>MIT License</a>
