@@ -7,6 +7,7 @@ from absl import flags, app
 
 FLAGS = flags.FLAGS
 
+
 def preprocess(sentence, lower=False):
     if lower:
         sentence = sentence.lower()
@@ -18,30 +19,36 @@ def preprocess(sentence, lower=False):
 
     return sentence
 
+
 max_length = 30
 EMBEDDING_DIM = 256
 units = 1024
 
 flags.DEFINE_string('input_vocab', None, 'Path to input vocabulary')
 flags.DEFINE_string('target_vocab', None, 'Path to target vocabulary')
-flags.DEFINE_string('checkpoint', './checkpoints/train', "Path to Checkpoint Directory")
+flags.DEFINE_string('checkpoint', './checkpoints/train',
+                    "Path to Checkpoint Directory")
+
 
 def main(absl):
-    input_tok = tfds.features.text.SubwordTextEncoder.load_from_file(FLAGS.input_vocab)
-    target_tok = tfds.features.text.SubwordTextEncoder.load_from_file(FLAGS.target_vocab)
+    input_tok = tfds.features.text.SubwordTextEncoder.load_from_file(
+        FLAGS.input_vocab)
+    target_tok = tfds.features.text.SubwordTextEncoder.load_from_file(
+        FLAGS.target_vocab)
     checkpoint_path = FLAGS.checkpoint
 
     input_vocab_size = input_tok.vocab_size + 2
     target_vocab_size = target_tok.vocab_size + 2
 
     encoder = Encoder(input_vocab_size, EMBEDDING_DIM,
-                units, 1, batch_norm=True)
+                      units, 1, batch_norm=True)
     decoder = Decoder(target_vocab_size, EMBEDDING_DIM,
-                    units, 1, batch_norm=True)
+                      units, 1, batch_norm=True)
 
-    ckpt = tf.train.Checkpoint(encoder = encoder,
-                                decoder = decoder)
-    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
+    ckpt = tf.train.Checkpoint(encoder=encoder,
+                               decoder=decoder)
+    ckpt_manager = tf.train.CheckpointManager(
+        ckpt, checkpoint_path, max_to_keep=5)
     if ckpt_manager.latest_checkpoint:
         ckpt.restore(ckpt_manager.latest_checkpoint)
     else:
@@ -52,8 +59,10 @@ def main(absl):
         start_token = [input_tok.vocab_size]
         end_token = [input_tok.vocab_size + 1]
 
-        inputs = tf.convert_to_tensor(start_token + input_tok.encode(sentence) + end_token)
-        inputs = tf.keras.preprocessing.sequence.pad_sequences([inputs], maxlen = max_length)
+        inputs = tf.convert_to_tensor(
+            start_token + input_tok.encode(sentence) + end_token)
+        inputs = tf.keras.preprocessing.sequence.pad_sequences(
+            [inputs], maxlen=max_length)
 
         hidden = [tf.zeros((1, units))]
         enc_out, enc_hidden = encoder(inputs, hidden)
@@ -64,17 +73,17 @@ def main(absl):
         result = []
 
         for t in range(max_length):
-            predictions, dec_hidden, _ = decoder(dec_input, 
-                                                dec_hidden, 
-                                                enc_out)
-            
+            predictions, dec_hidden, _ = decoder(dec_input,
+                                                 dec_hidden,
+                                                 enc_out)
+
             predicted_id = tf.argmax(predictions[0]).numpy()
 
             result.append(predicted_id)
 
             if predicted_id == target_tok.vocab_size + 1:
                 return result
-            
+
             dec_input = tf.expand_dims([predicted_id], 0)
 
         return result
@@ -82,7 +91,8 @@ def main(absl):
     def translate(sentence):
         result = evaluate(sentence)
 
-        predicted_sentence = target_tok.decode([i for i in result if i < target_tok.vocab_size])
+        predicted_sentence = target_tok.decode(
+            [i for i in result if i < target_tok.vocab_size])
 
         print(f'Input: {sentence}')
         print(f'Predic: {predicted_sentence}')

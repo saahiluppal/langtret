@@ -14,12 +14,15 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('input_vocab', None, 'Path to input vocabulary')
 flags.DEFINE_string('target_vocab', None, 'Path to target vocabulary')
-flags.DEFINE_string('checkpoint', './checkpoints/train', "Path to Checkpoint Directory")
+flags.DEFINE_string('checkpoint', './checkpoints/train',
+                    "Path to Checkpoint Directory")
 
 
 def main(absl):
-    input_tok = tfds.features.text.SubwordTextEncoder.load_from_file(FLAGS.input_vocab)
-    target_tok = tfds.features.text.SubwordTextEncoder.load_from_file(FLAGS.target_vocab)
+    input_tok = tfds.features.text.SubwordTextEncoder.load_from_file(
+        FLAGS.input_vocab)
+    target_tok = tfds.features.text.SubwordTextEncoder.load_from_file(
+        FLAGS.target_vocab)
     checkpoint_path = FLAGS.checkpoint
 
     input_vocab_size = input_tok.vocab_size + 2
@@ -27,13 +30,14 @@ def main(absl):
     dropout_rate = 0.1
 
     transformer = Transformer(NUM_LAYERS, EMBEDDING_DIM, NUM_HEADS, DFF,
-                            input_vocab_size, target_vocab_size,
-                            pe_input=input_vocab_size,
-                            pe_target=target_vocab_size,
-                            rate=dropout_rate)
+                              input_vocab_size, target_vocab_size,
+                              pe_input=input_vocab_size,
+                              pe_target=target_vocab_size,
+                              rate=dropout_rate)
 
-    ckpt = tf.train.Checkpoint(transformer = transformer)
-    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep = 5)
+    ckpt = tf.train.Checkpoint(transformer=transformer)
+    ckpt_manager = tf.train.CheckpointManager(
+        ckpt, checkpoint_path, max_to_keep=5)
     if ckpt_manager.latest_checkpoint:
         ckpt.restore(ckpt_manager.latest_checkpoint)
     else:
@@ -49,7 +53,6 @@ def main(absl):
         combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
 
         return enc_padding_mask, combined_mask, dec_padding_mask
-
 
     def evaluate(sentence):
         start_token = [input_tok.vocab_size]
@@ -67,31 +70,33 @@ def main(absl):
             )
 
             predictions, _ = transformer(encoder_input,
-                                        output, 
-                                        False, 
-                                        enc_padding_mask,
-                                        combined_mask,
-                                        dec_padding_mask)
+                                         output,
+                                         False,
+                                         enc_padding_mask,
+                                         combined_mask,
+                                         dec_padding_mask)
 
             predictions = predictions[:, -1:, :]
             predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)
 
             if predicted_id == target_tok.vocab_size + 1:
                 return tf.squeeze(output, axis=0)
-            
+
             output = tf.concat([output, predicted_id], axis=-1)
-        
+
         return tf.squeeze(output, axis=0)
 
     def translate(sentence):
         result = evaluate(sentence)
 
-        predicted_sentence = target_tok.decode([i for i in result if i < target_tok.vocab_size])
+        predicted_sentence = target_tok.decode(
+            [i for i in result if i < target_tok.vocab_size])
 
         print(f'Input: {sentence}')
         print(f'Predic: {predicted_sentence}')
 
     translate(input('Input:: '))
+
 
 if __name__ == '__main__':
     app.run(main)

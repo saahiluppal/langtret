@@ -82,9 +82,12 @@ def load_dataset(path, num_examples):
 
     return language1, language2, tok1, tok2
 
+
 CRITERION = tf.keras.losses.SparseCategoricalCrossentropy(
-    from_logits = True, reduction='none'
+    from_logits=True, reduction='none'
 )
+
+
 def loss_function(real, pred):
     mask = tf.math.logical_not(tf.math.equal(real, 0))
     loss_ = CRITERION(real, pred)
@@ -94,32 +97,34 @@ def loss_function(real, pred):
 
     return tf.reduce_sum(loss_)
 
+
 def main(absl):
-    lang1, lang2, tok1, tok2 = load_dataset(FLAGS.path, num_examples=FLAGS.sample)
+    lang1, lang2, tok1, tok2 = load_dataset(
+        FLAGS.path, num_examples=FLAGS.sample)
     dataset = tf.data.Dataset.from_tensor_slices((lang1, lang2))
 
     dataset = dataset.shuffle(BUFFER_SIZE).batch(FLAGS.batch,
-                                                drop_remainder=True)
+                                                 drop_remainder=True)
 
     vocab_inp_size = tok1.vocab_size + 2
     vocab_tar_size = tok2.vocab_size + 2
     units = 1024
 
     encoder = Encoder(vocab_inp_size, EMBEDDING_DIM,
-                    units, FLAGS.batch, batch_norm=True)
+                      units, FLAGS.batch, batch_norm=True)
     decoder = Decoder(vocab_tar_size, EMBEDDING_DIM,
-                    units, FLAGS.batch, batch_norm=True)
+                      units, FLAGS.batch, batch_norm=True)
 
     optimizer = tf.keras.optimizers.Adam(1e-4)
 
     checkpoint_path = './checkpoints/train'
     ckpt = tf.train.Checkpoint(encoder=encoder,
-                            decoder=decoder)
-    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=3)
+                               decoder=decoder)
+    ckpt_manager = tf.train.CheckpointManager(
+        ckpt, checkpoint_path, max_to_keep=3)
 
     loss_history = []
     steps = FLAGS.sample // FLAGS.batch
-
 
     @tf.function
     def train_step(inp, targ, enc_hidden):
@@ -132,7 +137,7 @@ def main(absl):
 
             for t in range(1, targ.shape[1]):
                 predictions, dec_hidden, _ = decoder(dec_input, dec_hidden,
-                                                    enc_output)
+                                                     enc_output)
 
                 loss += loss_function(targ[:, t], predictions)
                 dec_input = tf.expand_dims(targ[:, t], 1)
@@ -142,7 +147,6 @@ def main(absl):
         gradients = tape.gradient(loss, variables)
         optimizer.apply_gradients(zip(gradients, variables))
         return batch_loss
-
 
     try:
         print('Training Start...')
@@ -181,6 +185,7 @@ def main(absl):
     tok1.save_to_file('tok_lang1')
     tok2.save_to_file('tok_lang2')
     ckpt_manager.save()
+
 
 if __name__ == '__main__':
     app.run(main)

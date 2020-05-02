@@ -100,9 +100,12 @@ def create_masks(inp, tar):
 
     return enc_padding_mask, combined_mask, dec_padding_mask
 
+
 CRITERION = tf.keras.losses.SparseCategoricalCrossentropy(
-    from_logits = True, reduction = 'none'
+    from_logits=True, reduction='none'
 )
+
+
 def loss_function(real, pred, obj):
     mask = tf.math.logical_not(tf.math.equal(real, 0))
     loss_ = CRITERION(real, pred)
@@ -112,12 +115,14 @@ def loss_function(real, pred, obj):
 
     return tf.reduce_sum(loss_)/tf.reduce_sum(mask)
 
+
 def main(absl):
-    lang1, lang2, tok1, tok2 = load_dataset(FLAGS.path, num_examples=FLAGS.sample)
+    lang1, lang2, tok1, tok2 = load_dataset(
+        FLAGS.path, num_examples=FLAGS.sample)
     dataset = tf.data.Dataset.from_tensor_slices((lang1, lang2))
 
     dataset = dataset.shuffle(BUFFER_SIZE).batch(FLAGS.batch,
-                                                drop_remainder=True)
+                                                 drop_remainder=True)
 
     input_vocab_size = tok1.vocab_size + 2
     target_vocab_size = tok2.vocab_size + 2
@@ -125,28 +130,28 @@ def main(absl):
 
     learning_rate = CustomSchedule(EMBEDDING_DIM)
     optimizer = tf.keras.optimizers.Adam(learning_rate,
-                                        beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+                                         beta_1=0.9, beta_2=0.98, epsilon=1e-9)
 
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
         name='train_accuracy')
 
     transformer = Transformer(NUM_LAYERS, EMBEDDING_DIM, NUM_HEADS, DFF,
-                            input_vocab_size, target_vocab_size,
-                            pe_input=input_vocab_size,
-                            pe_target=target_vocab_size,
-                            rate=dropout_rate)
+                              input_vocab_size, target_vocab_size,
+                              pe_input=input_vocab_size,
+                              pe_target=target_vocab_size,
+                              rate=dropout_rate)
 
     checkpoint_path = "./checkpoints/train"
     ckpt = tf.train.Checkpoint(transformer=transformer)
-    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=3)
+    ckpt_manager = tf.train.CheckpointManager(
+        ckpt, checkpoint_path, max_to_keep=3)
 
     if ckpt_manager.latest_checkpoint:
         ckpt.restore(ckpt_manager.latest_checkpoint)
         print('Latest checkpoint restored!!')
 
     loss_history = []
-
 
     @tf.function
     def train_step(inp, tar):
@@ -158,14 +163,15 @@ def main(absl):
 
         with tf.GradientTape() as tape:
             predictions, _ = transformer(inp, tar_inp,
-                                        True,
-                                        enc_padding_mask,
-                                        combined_mask,
-                                        dec_padding_mask)
+                                         True,
+                                         enc_padding_mask,
+                                         combined_mask,
+                                         dec_padding_mask)
             loss = loss_function(tar_real, predictions)
 
         gradients = tape.gradient(loss, transformer.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, transformer.trainable_variables))
+        optimizer.apply_gradients(
+            zip(gradients, transformer.trainable_variables))
 
         train_loss(loss)
         train_accuracy(tar_real, predictions)
@@ -183,14 +189,16 @@ def main(absl):
                 train_step(inp, tar)
                 print('.', end='')
             print(f'\nTime {time.time() - start}')
-            print(f'Epoch {epoch + 1}, Loss: {train_loss.result()}, Accuracy: {train_accuracy.result()}\n')
+            print(
+                f'Epoch {epoch + 1}, Loss: {train_loss.result()}, Accuracy: {train_accuracy.result()}\n')
 
             if (epoch + 1) % 10 == 0:
                 ckpt_manager.save()
                 print('Saving Checkpoint')
 
             loss_history.append(train_loss.result())
-            low = len(np.where(np.array(loss_history) < train_loss.result())[0])
+            low = len(np.where(np.array(loss_history)
+                               < train_loss.result())[0])
             if low >= PATIENCE:
                 print("Early Stopping...")
                 break
@@ -203,6 +211,7 @@ def main(absl):
     tok1.save_to_file('tok_lang1')
     tok2.save_to_file('tok_lang2')
     ckpt_manager.save()
+
 
 if __name__ == '__main__':
     app.run(main)
