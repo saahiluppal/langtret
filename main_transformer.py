@@ -106,7 +106,7 @@ CRITERION = tf.keras.losses.SparseCategoricalCrossentropy(
 )
 
 
-def loss_function(real, pred, obj):
+def loss_function(real, pred):
     mask = tf.math.logical_not(tf.math.equal(real, 0))
     loss_ = CRITERION(real, pred)
 
